@@ -1,0 +1,77 @@
+name: itera-checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  step-1:
+    name: step-1
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node checks/run.mjs --step step-1
+
+  step-2:
+    name: step-2
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node checks/run.mjs --step step-2
+
+  step-3:
+    name: step-3
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node checks/run.mjs --step step-3
+
+  step-4:
+    name: step-4
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node checks/run.mjs --step step-4
+
+  step-5:
+    name: step-5
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node checks/run.mjs --step step-5
+
+  summary:
+    name: summary
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Write summary
+        run: |
+          node checks/run.mjs --all --json > result.json || true
+          {
+            echo '## Itera checks'
+            echo '```json'
+            cat result.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,65 @@
+{
+  "id": "portfolio",
+  "title": "Meu site de portfólio",
+  "summary": "Construa seu próprio site de portfólio com HTML, CSS e JavaScript e publique no GitHub Pages.",
+  "steps": [
+    {
+      "id": "step-1",
+      "title": "Estrutura",
+      "goal": "Montar o esqueleto da página no index.html.",
+      "lessonTopics": ["HTML: estrutura da página", "HTML: títulos e textos"],
+      "checks": [
+        { "id": "s1-doctype", "description": "A página começa com o doctype" },
+        { "id": "s1-lang", "description": "A tag html declara o idioma" },
+        { "id": "s1-title", "description": "A página tem um título na aba" },
+        { "id": "s1-landmarks", "description": "A página tem header, main e footer" },
+        { "id": "s1-one-h1", "description": "A página tem exatamente um h1 com texto" }
+      ]
+    },
+    {
+      "id": "step-2",
+      "title": "Conteúdo",
+      "goal": "Escrever quem você é, seus projetos e uma imagem.",
+      "lessonTopics": ["HTML: links e imagens", "HTML: listas", "HTML: seções"],
+      "checks": [
+        { "id": "s2-about", "description": "Existe uma seção sobre você" },
+        { "id": "s2-projects", "description": "Existe uma lista de projetos com pelo menos 2 links" },
+        { "id": "s2-img-alt", "description": "Toda imagem tem texto alternativo" }
+      ]
+    },
+    {
+      "id": "step-3",
+      "title": "Estilo",
+      "goal": "Dar visual ao site com o styles.css.",
+      "lessonTopics": ["CSS: ligando o arquivo", "CSS: flexbox", "CSS: hover", "CSS: media queries"],
+      "checks": [
+        { "id": "s3-linked", "description": "O styles.css está ligado ao index.html" },
+        { "id": "s3-layout", "description": "O CSS usa flexbox ou grid" },
+        { "id": "s3-hover", "description": "O CSS tem pelo menos uma regra :hover" },
+        { "id": "s3-media", "description": "O CSS tem pelo menos uma media query" }
+      ]
+    },
+    {
+      "id": "step-4",
+      "title": "Interação",
+      "goal": "Fazer um botão que troca o tema do site.",
+      "lessonTopics": ["JS: ligando o arquivo", "JS: eventos", "JS: classes no DOM"],
+      "checks": [
+        { "id": "s4-linked", "description": "O script.js está ligado ao index.html do jeito certo" },
+        { "id": "s4-button", "description": "Existe um botão na página" },
+        { "id": "s4-listener", "description": "O JavaScript usa addEventListener" },
+        { "id": "s4-toggle", "description": "O JavaScript alterna uma classe de tema no html ou no body" }
+      ]
+    },
+    {
+      "id": "step-5",
+      "title": "Publicar",
+      "goal": "Colocar o site no ar com o GitHub Pages.",
+      "lessonTopics": ["Git: publicar no GitHub Pages", "Git: enviar mudanças"],
+      "checks": [
+        { "id": "s5-live", "description": "O site responde no endereço do GitHub Pages" },
+        { "id": "s5-title", "description": "O site publicado mostra o título da sua página" }
+      ]
+    }
+  ]
+}

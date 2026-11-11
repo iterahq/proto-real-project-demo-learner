@@ -1,0 +1,44 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+      - name: Pages not enabled yet
+        if: steps.pages.outcome != 'success'
+        run: echo "::notice::GitHub Pages is not enabled for this repo yet (Settings > Pages > Source: GitHub Actions)."
+      - name: Upload site
+        if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy
+        id: deployment
+        if: steps.pages.outcome == 'success'
+        uses: actions/deploy-pages@v4
