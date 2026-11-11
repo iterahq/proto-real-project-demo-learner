@@ -1,2 +1,4 @@
-// TODO (passo 4): faça o botão mudar algo na página quando for clicado
-// (troque um texto ou ligue e desligue uma classe).
+const botao = document.querySelector('#botao');
+botao.addEventListener('click', () => {
+  document.querySelector('#recado').textContent = 'Oi! Obrigada por visitar.';
+});
