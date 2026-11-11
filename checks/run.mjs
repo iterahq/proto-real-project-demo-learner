@@ -300,6 +300,7 @@ export function buildResult(project, steps, env = process.env, now = new Date())
     project: project.id,
     runId: env.GITHUB_RUN_ID ? Number(env.GITHUB_RUN_ID) : null,
     sha: env.GITHUB_SHA ?? null,
+    defaultBranch: env.DEFAULT_BRANCH || env.GITHUB_REF_NAME || null,
     finishedAt: now.toISOString(),
     steps,
   };

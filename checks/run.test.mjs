@@ -173,8 +173,9 @@ test('a failed check names its real lesson with a link', async () => {
   assert.ok(!/classes no DOM/.test(JSON.stringify(project)));
 });
 test('markdown summary lists each failed check with its lesson link, and the result file is plain data', async () => {
-  const result = buildResult(project, (await runAll(project, site({ 'style.css': 'p {}' }), { retries: 1, delay: 1, url: 'http://127.0.0.1:1/' })).steps, { GITHUB_RUN_ID: '42', GITHUB_SHA: 'abc' });
+  const result = buildResult(project, (await runAll(project, site({ 'style.css': 'p {}' }), { retries: 1, delay: 1, url: 'http://127.0.0.1:1/' })).steps, { GITHUB_RUN_ID: '42', GITHUB_SHA: 'abc', DEFAULT_BRANCH: 'master' });
   assert.equal(result.runId, 42);
+  assert.equal(result.defaultBranch, 'master');
   assert.equal(result.version, 1);
   const md = toMarkdown(project, result);
   assert.match(md, /\[Regras só pro celular\]\(https:\/\/app\.iterahq\.dev\/lesson\/2da4ad47/);
