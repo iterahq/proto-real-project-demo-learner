@@ -48,8 +48,22 @@ jobs:
           persist-credentials: false
       - run: node checks/run.mjs --step step-4
 
+  pages-probe:
+    name: pages-probe
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.probe.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: probe
+        run: node checks/run.mjs --probe --retries 2 --delay 3000 >> "$GITHUB_OUTPUT"
+
   step-5:
     name: step-5
+    needs: pages-probe
+    if: needs.pages-probe.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     continue-on-error: false
     steps:

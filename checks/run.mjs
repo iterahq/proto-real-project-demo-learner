@@ -4,6 +4,7 @@
 // Usage:
 //   node checks/run.mjs --step step-2
 //   node checks/run.mjs --all --json
+//   node checks/run.mjs --probe   (prints enabled=true when the Pages URL answers 200)
 // Options: --dir <site dir> (default: cwd), --repo owner/repo (default: $GITHUB_REPOSITORY),
 //          --url <pages url> (override), --retries <n>, --delay <ms>
 //
@@ -288,6 +289,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === '--json') o.json = true;
     else if (a === '--all') o.all = true;
+    else if (a === '--probe') o.probe = true;
     else if (a === '--step') o.step = argv[++i];
     else if (a === '--dir') o.dir = argv[++i];
     else if (a === '--repo') o.repo = argv[++i];
@@ -309,6 +311,12 @@ function printHuman(step, title) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
+  if (o.probe) {
+    const url = pagesUrl(o);
+    const res = url ? await fetchWithRetries(url, o.retries ?? 3, o.delay ?? 5000) : { status: 0 };
+    console.log(`enabled=${res.status === 200}`);
+    return;
+  }
   if (!o.all && !o.step) {
     console.error('Usage: node checks/run.mjs --step step-N | --all [--json]');
     process.exit(2);
