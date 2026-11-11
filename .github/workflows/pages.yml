@@ -32,7 +32,8 @@ jobs:
         continue-on-error: true
       - name: Pages not enabled yet
         if: steps.pages.outcome != 'success'
-        run: echo "::notice::GitHub Pages is not enabled for this repo yet (Settings > Pages > Source: GitHub Actions)."
+        run: |
+          echo "::notice::GitHub Pages is not enabled for this repo yet. Enable it in Settings, Pages, Source GitHub Actions."
       - name: Upload site
         if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3

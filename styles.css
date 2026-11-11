@@ -1,5 +1,8 @@
-/* TODO (passo 3): deixe o site bonito.
-   - organize o layout com flexbox ou grid
-   - faça algo mudar quando o mouse passar por cima
-   - ajuste o visual para telas pequenas
-   - crie o visual do tema alternativo (passo 4) */
+body { font-family: sans-serif; margin: 0; }
+header, footer { padding: 1rem; background: #0a0908; color: #3fd17f; }
+main { display: flex; gap: 1rem; padding: 1rem; }
+section { flex: 1; }
+a:hover { text-decoration: underline; }
+@media (max-width: 600px) {
+  main { flex-direction: column; }
+}
