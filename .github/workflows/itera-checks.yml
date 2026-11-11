@@ -3,6 +3,11 @@ name: itera-checks
 on:
   push:
   pull_request:
+  # Re-check after the Pages deploy finishes: on the first push after Pages is enabled the
+  # check would otherwise run before the site is live and step 5 would stay "not published".
+  workflow_run:
+    workflows: [pages]
+    types: [completed]
 
 permissions:
   contents: read
@@ -72,20 +77,36 @@ jobs:
           persist-credentials: false
       - run: node checks/run.mjs --step step-5
 
-  summary:
-    name: summary
+  publish:
+    name: publish
+    needs: [step-1, step-2, step-3, step-4, pages-probe, step-5]
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
-    if: always()
+    permissions:
+      contents: write
+    concurrency:
+      group: itera-publish
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Write summary
+      - name: Short summary for the Actions page
+        run: node checks/run.mjs --all --markdown --retries 3 --delay 5000 >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Publish the result for the Itera page
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          node checks/run.mjs --all --json > result.json || true
-          {
-            echo '## Itera checks'
-            echo '```json'
-            cat result.json
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          out="$RUNNER_TEMP/itera-result"
+          rm -rf "$out" && mkdir "$out"
+          node checks/run.mjs --all --json --retries 3 --delay 5000 > "$out/itera-result.json" || true
+          test -s "$out/itera-result.json"
+          cd "$out"
+          git init -q -b itera-results
+          git config user.name "itera-checks"
+          git config user.email "itera-checks@users.noreply.github.com"
+          git add itera-result.json
+          git commit -q -m "Result for ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" itera-results

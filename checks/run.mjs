@@ -3,7 +3,8 @@
 //
 // Usage:
 //   node checks/run.mjs --step step-2
-//   node checks/run.mjs --all --json
+//   node checks/run.mjs --all --json   (the machine-readable result the Itera page reads)
+//   node checks/run.mjs --all --markdown   (a short summary for the Actions page)
 //   node checks/run.mjs --probe   (prints enabled=true when the Pages URL answers 200)
 // Options: --dir <site dir> (default: cwd), --repo owner/repo (default: $GITHUB_REPOSITORY),
 //          --url <pages url> (override), --retries <n>, --delay <ms>
@@ -14,8 +15,10 @@
 //   an attribute value) may confuse the parser.
 // - The projects section is found by id="projects" and read up to the first closing
 //   tag with the same name, so nested tags of the same name may cut it short.
-// - The theme toggle is detected by `classList.toggle(` plus a reference to
-//   documentElement / document.body / querySelector('html'|'body'); we do not execute JS.
+// - Step 4 "reacts" is detected by a text swap (textContent / innerText / innerHTML) or a
+//   classList toggle / add / remove call; we do not execute JS.
+// - Every check only requires what a linked Itera lesson teaches. The check -> lesson map lives
+//   in ../project.json, the single source of truth (the Itera page keeps a copy and tests it).
 // - Step 5 needs the network. 404 means Pages is not live yet and is reported "pending".
 
 import fs from 'node:fs';
@@ -23,28 +26,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-
-// check id -> what is missing (pt-BR, beginner level) and the lesson topic to review.
-export const MESSAGES = {
-  's1-doctype': { missing: 'A primeira linha do index.html ainda não avisa ao navegador que isto é uma página HTML moderna (o doctype).', topic: 'HTML: estrutura da página' },
-  's1-lang': { missing: 'A tag <html> ainda não diz em que idioma a página está escrita.', topic: 'HTML: estrutura da página' },
-  's1-title': { missing: 'A página ainda não tem um título para aparecer na aba do navegador (ou ele está vazio).', topic: 'HTML: estrutura da página' },
-  's1-landmarks': { missing: 'Faltam partes da estrutura: a página precisa de um cabeçalho, uma área principal e um rodapé.', topic: 'HTML: estrutura da página' },
-  's1-one-h1': { missing: 'A página precisa ter exatamente um título principal (h1) com texto dentro.', topic: 'HTML: títulos e textos' },
-  's2-about': { missing: 'Falta uma seção que fale sobre você, marcada com o id "about".', topic: 'HTML: seções' },
-  's2-projects': { missing: 'Falta a lista dos seus projetos, marcada com o id "projects", com pelo menos 2 links dentro.', topic: 'HTML: listas' },
-  's2-img-alt': { missing: 'Falta uma imagem na página, ou alguma imagem está sem o texto alternativo preenchido.', topic: 'HTML: links e imagens' },
-  's3-linked': { missing: 'O arquivo styles.css ainda não está ligado ao index.html, ou está vazio.', topic: 'CSS: ligando o arquivo' },
-  's3-layout': { missing: 'O CSS ainda não organiza o layout com flexbox ou grid.', topic: 'CSS: flexbox' },
-  's3-hover': { missing: 'O CSS ainda não tem nenhuma regra que reage ao mouse passando por cima (:hover).', topic: 'CSS: hover' },
-  's3-media': { missing: 'O CSS ainda não tem nenhuma regra que muda o visual conforme o tamanho da tela (media query).', topic: 'CSS: media queries' },
-  's4-linked': { missing: 'O script.js ainda não está ligado ao index.html, ou está ligado num lugar em que pode rodar antes da página carregar.', topic: 'JS: ligando o arquivo' },
-  's4-button': { missing: 'Falta um botão na página para a pessoa clicar.', topic: 'JS: eventos' },
-  's4-listener': { missing: 'O JavaScript ainda não fica "escutando" o clique do botão.', topic: 'JS: eventos' },
-  's4-toggle': { missing: 'O JavaScript ainda não liga e desliga uma classe de tema no <html> ou no <body>.', topic: 'JS: classes no DOM' },
-  's5-live': { missing: 'O seu site ainda não responde no endereço do GitHub Pages.', topic: 'Git: publicar no GitHub Pages' },
-  's5-title': { missing: 'O site publicado não mostra o título que está no seu index.html. Talvez a versão publicada seja antiga.', topic: 'Git: enviar mudanças' },
-};
 
 // ---------- helpers ----------
 
@@ -135,24 +116,36 @@ function localHref(attrs, file) {
   return v === file;
 }
 
+const CSS_NAMES = ['style.css', 'styles.css'];
+
+function linkedCssName(html) {
+  for (const t of findTags(html, 'link')) {
+    if (!/\bstylesheet\b/i.test(t.attrs.rel ?? '')) continue;
+    const name = CSS_NAMES.find((n) => localHref(t.attrs, n));
+    if (name) return name;
+  }
+  return null;
+}
+
 function loadSite(dir) {
-  const html = readFileSafe(dir, 'index.html');
-  const css = readFileSafe(dir, 'styles.css');
+  const rawHtml = readFileSafe(dir, 'index.html');
+  const html = rawHtml === null ? '' : stripHtmlComments(rawHtml);
+  const linked = linkedCssName(html);
+  // The lessons call the file style.css; styles.css is accepted too. Read the linked one first.
+  const cssName = linked ?? CSS_NAMES.find((n) => readFileSafe(dir, n) !== null) ?? null;
+  const rawCss = cssName ? readFileSafe(dir, cssName) : null;
   const js = readFileSafe(dir, 'script.js');
   return {
-    html: html === null ? '' : stripHtmlComments(html),
-    css: css === null ? null : stripCssComments(css),
+    html,
+    css: rawCss === null ? null : stripCssComments(rawCss),
+    cssLinked: linked !== null,
     js: js === null ? null : stripJsComments(js),
   };
 }
 
-function cssLinked(site) {
-  return findTags(site.html, 'link').some(
-    (t) => /\bstylesheet\b/i.test(t.attrs.rel ?? '') && localHref(t.attrs, 'styles.css'),
-  );
-}
-
 // ---------- static checks: id -> (site) => boolean ----------
+
+const hasDecl = (css, re) => css !== null && re.test(css);
 
 export const STATIC_CHECKS = {
   's1-doctype': ({ html }) => /^\s*<!doctype\s+html\s*>/i.test(html),
@@ -163,31 +156,29 @@ export const STATIC_CHECKS = {
     const h1s = html.match(/<h1(?=[\s>])[^>]*>[\s\S]*?<\/h1>/gi) ?? [];
     return h1s.length === 1 && textOf(h1s[0]) !== '';
   },
-  's2-about': ({ html }) => {
-    const inner = innerById(html, 'about');
-    return inner !== null && textOf(inner) !== '';
-  },
-  's2-projects': ({ html }) => {
-    const inner = innerById(html, 'projects');
-    if (inner === null) return false;
-    const links = findTags(inner, 'a').filter((t) => {
+  's2-section': ({ html }) => /<section(?=[\s>])[^>]*>[\s\S]*?<h2(?=[\s>])[^>]*>[\s\S]*?<\/h2>/i.test(html),
+  's2-list': ({ html }) =>
+    (html.match(/<(ul|ol)(?=[\s>])[^>]*>[\s\S]*?<\/\1>/gi) ?? []).some((list) => findTags(list, 'li').length >= 2),
+  's2-link': ({ html }) =>
+    findTags(html, 'a').some((t) => {
       const href = (t.attrs.href ?? '').trim();
       return href !== '' && href !== '#';
-    });
-    return links.length >= 2;
-  },
-  's2-img-alt': ({ html }) => {
+    }),
+  // alt="" is correct for a decorative image (the lessons teach it); only a missing alt fails.
+  's2-img': ({ html }) => {
     const imgs = findTags(html, 'img');
-    return imgs.length > 0 && imgs.every((t) => (t.attrs.alt ?? '').trim() !== '');
+    return imgs.length > 0 && imgs.every((t) => (t.attrs.src ?? '').trim() !== '' && 'alt' in t.attrs);
   },
-  's3-linked': (site) => cssLinked(site) && site.css !== null && site.css.trim() !== '',
-  's3-layout': ({ css }) => css !== null && /display\s*:\s*(inline-)?(flex|grid)\b/i.test(css),
-  's3-hover': ({ css }) => css !== null && /:hover\b[^{}]*\{/i.test(css),
-  's3-media': ({ css }) => css !== null && /@media\b[^{]*\{/i.test(css),
+  's3-linked': (site) => site.cssLinked && site.css !== null && site.css.trim() !== '',
+  's3-color': ({ css }) => hasDecl(css, /(^|[;{\s])(background-color|color)\s*:\s*[^;}\s]/i),
+  's3-spacing': ({ css }) => hasDecl(css, /(^|[;{\s])(padding|margin)(-[a-z]+)?\s*:\s*[^;}\s]/i),
+  's3-flex': ({ css }) => hasDecl(css, /display\s*:\s*(inline-)?flex\b/i),
+  's3-media': ({ css }) => hasDecl(css, /@media\b[^{]*\{/i),
   's4-linked': ({ html }) => {
     const tag = findTags(html, 'script').find((t) => localHref(t.attrs, 'script.js'));
     if (!tag) return false;
-    if ('defer' in tag.attrs) return true;
+    // A module script is deferred by the browser, so it is safe in the head too.
+    if ('defer' in tag.attrs || (tag.attrs.type ?? '').toLowerCase() === 'module') return true;
     // Otherwise it must be the last thing before </body>.
     const bodyEnd = html.search(/<\/body\s*>/i);
     const rest = html.slice(tag.end, bodyEnd === -1 ? html.length : bodyEnd);
@@ -195,10 +186,9 @@ export const STATIC_CHECKS = {
   },
   's4-button': ({ html }) => findTags(html, 'button').length > 0,
   's4-listener': ({ js }) => js !== null && /\.addEventListener\s*\(/.test(js),
-  's4-toggle': ({ js }) =>
+  's4-reacts': ({ js }) =>
     js !== null &&
-    /\.classList\s*\.\s*toggle\s*\(/.test(js) &&
-    /document\s*\.\s*(documentElement|body)\b|querySelector\s*\(\s*['"](html|body)['"]\s*\)/.test(js),
+    (/\.(textContent|innerText|innerHTML)\s*(\+)?=(?!=)/.test(js) || /\.classList\s*\.\s*(toggle|add|remove)\s*\(/.test(js)),
 };
 
 // ---------- step 5: network ----------
@@ -232,6 +222,7 @@ async function runStep5(project, site, opts) {
   const step = project.steps.find((s) => s.id === 'step-5');
   const url = pagesUrl(opts);
   const pendingAll = () => step.checks.map((c) => ({ id: c.id, status: 'pending', message: 'Aguardando: o GitHub Pages ainda não está ativo para este repositório.' }));
+  const failed = (id) => formatFail(project, id);
   if (!url) return pendingAll();
   const { status, body } = await fetchWithRetries(url, opts.retries ?? 3, opts.delay ?? 5000);
   if (status === 404) return pendingAll();
@@ -241,14 +232,32 @@ async function runStep5(project, site, opts) {
   return [
     { id: 's5-live', passed: liveOk },
     { id: 's5-title', passed: titleOk },
-  ].map((r) => ({ id: r.id, status: r.passed ? 'pass' : 'fail', message: r.passed ? 'ok' : formatFail(r.id) }));
+  ].map((r) => ({ id: r.id, status: r.passed ? 'pass' : 'fail', message: r.passed ? 'ok' : failed(r.id) }));
 }
 
 // ---------- runner ----------
 
-export function formatFail(id) {
-  const m = MESSAGES[id];
-  return `${m.missing} Revise a lição: "${m.topic}".`;
+export function findCheck(project, id) {
+  for (const step of project.steps) {
+    const check = step.checks.find((c) => c.id === id);
+    if (check) return check;
+  }
+  throw new Error(`Unknown check: ${id}`);
+}
+
+export function lessonUrl(project, lesson) {
+  return `${project.lessonUrlBase}${lesson.id}`;
+}
+
+// Plain message stored in the result file. The page adds the lesson link from project.json.
+export function formatFail(project, id) {
+  return findCheck(project, id).missing;
+}
+
+// Console line: what is missing plus the real lesson title and link.
+export function describeFail(project, id) {
+  const check = findCheck(project, id);
+  return `${check.missing}\n      Revise a lição "${check.lesson.title}": ${lessonUrl(project, check.lesson)}`;
 }
 
 function summarize(checks) {
@@ -267,10 +276,11 @@ export async function runStep(project, stepId, dir, opts = {}) {
   } else {
     checks = step.checks.map((c) => {
       const passed = STATIC_CHECKS[c.id](site);
-      return { id: c.id, status: passed ? 'pass' : 'fail', message: passed ? 'ok' : formatFail(c.id) };
+      return { id: c.id, status: passed ? 'pass' : 'fail', message: passed ? 'ok' : formatFail(project, c.id) };
     });
   }
-  return { id: stepId, status: summarize(checks), checks };
+  const withLesson = checks.map((c) => ({ ...c, lessonId: findCheck(project, c.id).lesson.id }));
+  return { id: stepId, status: summarize(withLesson), checks: withLesson };
 }
 
 export async function runAll(project, dir, opts = {}) {
@@ -283,12 +293,38 @@ export function loadProject() {
   return JSON.parse(fs.readFileSync(path.join(HERE, '..', 'project.json'), 'utf8'));
 }
 
+// The file the Itera page reads (no token needed). Plain data only: no secrets, no repo contents.
+export function buildResult(project, steps, env = process.env, now = new Date()) {
+  return {
+    version: 1,
+    project: project.id,
+    runId: env.GITHUB_RUN_ID ? Number(env.GITHUB_RUN_ID) : null,
+    sha: env.GITHUB_SHA ?? null,
+    finishedAt: now.toISOString(),
+    steps,
+  };
+}
+
+export function toMarkdown(project, result) {
+  const lines = ['## Itera checks', ''];
+  const icon = { pass: 'OK', fail: 'FALHOU', pending: 'AGUARDANDO' };
+  for (const s of result.steps) {
+    lines.push(`- **${icon[s.status]}** ${s.id} - ${project.steps.find((p) => p.id === s.id).title}`);
+    for (const c of s.checks.filter((x) => x.status === 'fail')) {
+      const lesson = findCheck(project, c.id).lesson;
+      lines.push(`  - ${c.message} Revise a lição [${lesson.title}](${lessonUrl(project, lesson)}).`);
+    }
+  }
+  return lines.join('\n');
+}
+
 function parseArgs(argv) {
   const o = { json: false, all: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') o.json = true;
     else if (a === '--all') o.all = true;
+    else if (a === '--markdown') o.markdown = true;
     else if (a === '--probe') o.probe = true;
     else if (a === '--step') o.step = argv[++i];
     else if (a === '--dir') o.dir = argv[++i];
@@ -300,12 +336,12 @@ function parseArgs(argv) {
   return o;
 }
 
-function printHuman(step, title) {
+function printHuman(project, step, title) {
   const icon = { pass: 'OK', fail: 'FALHOU', pending: 'AGUARDANDO' };
   console.log(`${icon[step.status]}  ${step.id} - ${title}`);
   for (const c of step.checks) {
     if (c.status === 'pass') console.log(`   ok: ${c.id}`);
-    else console.log(`   ${c.status === 'fail' ? 'x' : '...'} ${c.id}: ${c.message}`);
+    else console.log(`   ${c.status === 'fail' ? 'x' : '...'} ${c.id}: ${c.status === 'fail' ? describeFail(project, c.id) : c.message}`);
   }
 }
 
@@ -318,18 +354,19 @@ async function main() {
     return;
   }
   if (!o.all && !o.step) {
-    console.error('Usage: node checks/run.mjs --step step-N | --all [--json]');
+    console.error('Usage: node checks/run.mjs --step step-N | --all [--json|--markdown]');
     process.exit(2);
   }
   const project = loadProject();
   const dir = path.resolve(o.dir ?? process.cwd());
-  const result = o.all
-    ? await runAll(project, dir, o)
-    : { steps: [await runStep(project, o.step, dir, o)] };
+  const steps = o.all ? (await runAll(project, dir, o)).steps : [await runStep(project, o.step, dir, o)];
+  const result = buildResult(project, steps);
   if (o.json) {
     console.log(JSON.stringify(result, null, 2));
+  } else if (o.markdown) {
+    console.log(toMarkdown(project, result));
   } else {
-    for (const s of result.steps) printHuman(s, project.steps.find((p) => p.id === s.id).title);
+    for (const s of result.steps) printHuman(project, s, project.steps.find((p) => p.id === s.id).title);
   }
   process.exit(result.steps.some((s) => s.status === 'fail') ? 1 : 0);
 }

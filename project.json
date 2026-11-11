@@ -1,64 +1,165 @@
 {
   "id": "portfolio",
+  "version": 2,
   "title": "Meu site de portfólio",
   "summary": "Construa seu próprio site de portfólio com HTML, CSS e JavaScript e publique no GitHub Pages.",
+  "lessonUrlBase": "https://app.iterahq.dev/lesson/",
+  "resultBranch": "itera-results",
+  "resultFile": "itera-result.json",
   "steps": [
     {
       "id": "step-1",
       "title": "Estrutura",
-      "goal": "Montar o esqueleto da página no index.html.",
-      "lessonTopics": ["HTML: estrutura da página", "HTML: títulos e textos"],
+      "goal": "Monte o esqueleto da página: tipo do arquivo, idioma, título da aba, cabeçalho, miolo, rodapé e um título grande.",
       "checks": [
-        { "id": "s1-doctype", "description": "A página começa com o doctype" },
-        { "id": "s1-lang", "description": "A tag html declara o idioma" },
-        { "id": "s1-title", "description": "A página tem um título na aba" },
-        { "id": "s1-landmarks", "description": "A página tem header, main e footer" },
-        { "id": "s1-one-h1", "description": "A página tem exatamente um h1 com texto" }
+        {
+          "id": "s1-doctype",
+          "description": "A primeira linha avisa que isto é uma página HTML",
+          "missing": "A primeira linha do index.html ainda não avisa ao navegador que isto é uma página HTML (o doctype).",
+          "lesson": { "id": "3bf07a29-2d6d-464f-af6e-95ea91a51f8f", "title": "O esqueleto da página" }
+        },
+        {
+          "id": "s1-lang",
+          "description": "A tag html diz o idioma da página",
+          "missing": "A tag <html> ainda não diz em que idioma a página está escrita.",
+          "lesson": { "id": "e81a0496-b3ea-4523-a576-46100b4a2599", "title": "Idioma, letras e alt" }
+        },
+        {
+          "id": "s1-title",
+          "description": "A página tem um título na aba",
+          "missing": "A página ainda não tem um título para aparecer na aba do navegador (ou ele está vazio).",
+          "lesson": { "id": "3bf07a29-2d6d-464f-af6e-95ea91a51f8f", "title": "O esqueleto da página" }
+        },
+        {
+          "id": "s1-landmarks",
+          "description": "A página tem header, main e footer",
+          "missing": "Faltam partes da estrutura: a página precisa de um cabeçalho (header), uma área principal (main) e um rodapé (footer).",
+          "lesson": { "id": "45790522-9b96-4a91-a2eb-f33a868f679a", "title": "Partes com nome" }
+        },
+        {
+          "id": "s1-one-h1",
+          "description": "A página tem exatamente um h1 com texto",
+          "missing": "A página precisa ter exatamente um título grande (h1) com texto dentro.",
+          "lesson": { "id": "d830ffe4-5c89-46c2-957c-0fde063d8773", "title": "Títulos e a sua página" }
+        }
       ]
     },
     {
       "id": "step-2",
       "title": "Conteúdo",
-      "goal": "Escrever quem você é, seus projetos e uma imagem.",
-      "lessonTopics": ["HTML: links e imagens", "HTML: listas", "HTML: seções"],
+      "goal": "Escreva sobre você: uma parte com título, uma lista, um link e uma imagem.",
       "checks": [
-        { "id": "s2-about", "description": "Existe uma seção sobre você" },
-        { "id": "s2-projects", "description": "Existe uma lista de projetos com pelo menos 2 links" },
-        { "id": "s2-img-alt", "description": "Toda imagem tem texto alternativo" }
+        {
+          "id": "s2-section",
+          "description": "Existe uma parte (section) com um título h2",
+          "missing": "Falta uma parte da página (section) que comece com um título h2.",
+          "lesson": { "id": "45790522-9b96-4a91-a2eb-f33a868f679a", "title": "Partes com nome" }
+        },
+        {
+          "id": "s2-list",
+          "description": "Existe uma lista com pelo menos 2 itens",
+          "missing": "Falta uma lista (ul ou ol) com pelo menos 2 itens (li).",
+          "lesson": { "id": "273cfabe-a57b-43cb-a64d-06ac68e7581a", "title": "Listas e destaque" }
+        },
+        {
+          "id": "s2-link",
+          "description": "Existe um link que leva a algum lugar",
+          "missing": "Falta um link (a) com o endereço de destino preenchido em href.",
+          "lesson": { "id": "9ecd064a-94b1-4018-8caa-086e8d48b631", "title": "Link e imagem" }
+        },
+        {
+          "id": "s2-img",
+          "description": "Existe uma imagem com o atributo alt",
+          "missing": "Falta uma imagem (img) com o arquivo em src, ou alguma imagem está sem o atributo alt. Imagem só de enfeite usa alt vazio: alt=\"\".",
+          "lesson": { "id": "e81a0496-b3ea-4523-a576-46100b4a2599", "title": "Idioma, letras e alt" }
+        }
       ]
     },
     {
       "id": "step-3",
       "title": "Estilo",
-      "goal": "Dar visual ao site com o styles.css.",
-      "lessonTopics": ["CSS: ligando o arquivo", "CSS: flexbox", "CSS: hover", "CSS: media queries"],
+      "goal": "Ligue o style.css e dê cor, espaço, uma fila e um ajuste para o celular.",
       "checks": [
-        { "id": "s3-linked", "description": "O styles.css está ligado ao index.html" },
-        { "id": "s3-layout", "description": "O CSS usa flexbox ou grid" },
-        { "id": "s3-hover", "description": "O CSS tem pelo menos uma regra :hover" },
-        { "id": "s3-media", "description": "O CSS tem pelo menos uma media query" }
+        {
+          "id": "s3-linked",
+          "description": "O style.css está ligado ao index.html",
+          "missing": "O arquivo style.css ainda não está ligado ao index.html (com a linha link no head), ou está vazio.",
+          "lesson": { "id": "235f958b-896c-46f4-bc5c-0b4bd903eca0", "title": "Ligar o CSS e pintar o fundo" }
+        },
+        {
+          "id": "s3-color",
+          "description": "O CSS muda uma cor",
+          "missing": "O CSS ainda não muda nenhuma cor (color ou background-color).",
+          "lesson": { "id": "235f958b-896c-46f4-bc5c-0b4bd903eca0", "title": "Ligar o CSS e pintar o fundo" }
+        },
+        {
+          "id": "s3-spacing",
+          "description": "O CSS dá espaço a alguma coisa",
+          "missing": "O CSS ainda não dá espaço a nada (padding ou margin).",
+          "lesson": { "id": "1d1cb9fc-5214-4c43-bc64-3668177db1ae", "title": "Seu cartão com respiro" }
+        },
+        {
+          "id": "s3-flex",
+          "description": "O CSS coloca itens em fila com flex",
+          "missing": "O CSS ainda não coloca itens em fila com display: flex.",
+          "lesson": { "id": "a8f83a33-2b53-4ca9-a89c-2cf8cfbdc9bb", "title": "Menu em fila com flex" }
+        },
+        {
+          "id": "s3-media",
+          "description": "O CSS tem uma regra só para tela pequena",
+          "missing": "O CSS ainda não tem nenhuma regra que vale só para tela pequena (@media).",
+          "lesson": { "id": "2da4ad47-52bd-401c-8295-4b5d679fd836", "title": "Regras só pro celular" }
+        }
       ]
     },
     {
       "id": "step-4",
       "title": "Interação",
-      "goal": "Fazer um botão que troca o tema do site.",
-      "lessonTopics": ["JS: ligando o arquivo", "JS: eventos", "JS: classes no DOM"],
+      "goal": "Faça um botão que muda algo na página quando alguém clica.",
       "checks": [
-        { "id": "s4-linked", "description": "O script.js está ligado ao index.html do jeito certo" },
-        { "id": "s4-button", "description": "Existe um botão na página" },
-        { "id": "s4-listener", "description": "O JavaScript usa addEventListener" },
-        { "id": "s4-toggle", "description": "O JavaScript alterna uma classe de tema no html ou no body" }
+        {
+          "id": "s4-linked",
+          "description": "O script.js está ligado ao index.html",
+          "missing": "O arquivo script.js ainda não está ligado ao index.html, ou está ligado num lugar em que pode rodar antes da página carregar (ponha no fim do body ou use defer).",
+          "lesson": { "id": "7f2e312c-68f4-4c95-b3bf-0f385bb4b8dc", "title": "Meu primeiro script" }
+        },
+        {
+          "id": "s4-button",
+          "description": "Existe um botão na página",
+          "missing": "Falta um botão (button) na página para a pessoa clicar.",
+          "lesson": { "id": "235c0172-698d-47a0-9a58-8796ae01694c", "title": "Reagir ao clique" }
+        },
+        {
+          "id": "s4-listener",
+          "description": "O JavaScript espera o clique",
+          "missing": "O JavaScript ainda não fica esperando o clique do botão (addEventListener).",
+          "lesson": { "id": "235c0172-698d-47a0-9a58-8796ae01694c", "title": "Reagir ao clique" }
+        },
+        {
+          "id": "s4-reacts",
+          "description": "O JavaScript muda algo na página",
+          "missing": "O JavaScript ainda não muda nada na página. Troque um texto (textContent) ou ligue e desligue uma classe (classList.toggle).",
+          "lesson": { "id": "469d1ead-8d66-42e9-99dd-fa04483d6ebc", "title": "O JS troca o texto" }
+        }
       ]
     },
     {
       "id": "step-5",
       "title": "Publicar",
-      "goal": "Colocar o site no ar com o GitHub Pages.",
-      "lessonTopics": ["Git: publicar no GitHub Pages", "Git: enviar mudanças"],
+      "goal": "Coloque o site no ar com o GitHub Pages e pegue o seu link.",
       "checks": [
-        { "id": "s5-live", "description": "O site responde no endereço do GitHub Pages" },
-        { "id": "s5-title", "description": "O site publicado mostra o título da sua página" }
+        {
+          "id": "s5-live",
+          "description": "O site responde no endereço do GitHub Pages",
+          "missing": "O seu site ainda não responde no endereço do GitHub Pages.",
+          "lesson": { "id": "74ddfea1-15ad-4bd0-b952-b519d6f312d1", "title": "Publicar a página" }
+        },
+        {
+          "id": "s5-title",
+          "description": "O site publicado mostra o título da sua página",
+          "missing": "O site publicado não mostra o título que está no seu index.html. Talvez a versão publicada seja antiga.",
+          "lesson": { "id": "74ddfea1-15ad-4bd0-b952-b519d6f312d1", "title": "Publicar a página" }
+        }
       ]
     }
   ]
