@@ -119,8 +119,8 @@
       "checks": [
         {
           "id": "s4-linked",
-          "description": "O script.js está ligado ao index.html",
-          "missing": "O arquivo script.js ainda não está ligado ao index.html, ou está ligado num lugar em que pode rodar antes da página carregar (ponha no fim do body ou use defer).",
+          "description": "O JavaScript está ligado à página",
+          "missing": "A página ainda não tem JavaScript no lugar certo. Escreva um script no fim do body (ou ligue o script.js no fim do body ou com defer). Se ficar no head sem defer, pode rodar antes da página carregar.",
           "lesson": { "id": "7f2e312c-68f4-4c95-b3bf-0f385bb4b8dc", "title": "Meu primeiro script" }
         },
         {
@@ -138,7 +138,7 @@
         {
           "id": "s4-reacts",
           "description": "O JavaScript muda algo na página",
-          "missing": "O JavaScript ainda não muda nada na página. Troque um texto (textContent) ou ligue e desligue uma classe (classList.toggle).",
+          "missing": "O JavaScript ainda não muda nada na página. Troque um texto (textContent), mude um estilo ou ligue e desligue uma classe (classList.toggle).",
           "lesson": { "id": "469d1ead-8d66-42e9-99dd-fa04483d6ebc", "title": "O JS troca o texto" }
         }
       ]

@@ -15,8 +15,9 @@
 //   an attribute value) may confuse the parser.
 // - The projects section is found by id="projects" and read up to the first closing
 //   tag with the same name, so nested tags of the same name may cut it short.
-// - Step 4 "reacts" is detected by a text swap (textContent / innerText / innerHTML) or a
-//   classList toggle / add / remove call; we do not execute JS.
+// - Step 4 "reacts" is detected by a text swap (textContent / innerText / innerHTML), a style change
+//   (.style.x = ...), or a classList toggle / add / remove call; we do not execute JS. The JS read is
+//   script.js plus any inline <script>.
 // - Every check only requires what a linked Itera lesson teaches. The check -> lesson map lives
 //   in ../project.json, the single source of truth (the Itera page keeps a copy and tests it).
 // - Step 5 needs the network. 404 means Pages is not live yet and is reported "pending".
@@ -111,6 +112,17 @@ export function innerById(html, id) {
   return html.slice(start, close === -1 ? html.length : close);
 }
 
+// Every <script ...>...</script> block: [{ attrs, body, index, end }] (end is after the closing tag).
+export function scriptBlocks(html) {
+  const re = /<script(?=[\s>/])([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+  const found = [];
+  let m;
+  while ((m = re.exec(html))) {
+    found.push({ attrs: parseAttrs(m[1]), body: m[2], index: m.index, end: m.index + m[0].length });
+  }
+  return found;
+}
+
 function localHref(attrs, file) {
   const v = (attrs.href ?? attrs.src ?? '').split(/[?#]/)[0].replace(/^\.\//, '');
   return v === file;
@@ -135,11 +147,18 @@ function loadSite(dir) {
   const cssName = linked ?? CSS_NAMES.find((n) => readFileSafe(dir, n) !== null) ?? null;
   const rawCss = cssName ? readFileSafe(dir, cssName) : null;
   const js = readFileSafe(dir, 'script.js');
+  // The lessons teach a <script> written in the page itself, at the end of the body; its code counts
+  // as the page's JavaScript just like script.js does.
+  const inline = scriptBlocks(html)
+    .filter((b) => !('src' in b.attrs))
+    .map((b) => b.body)
+    .join('\n');
+  const allJs = [js, inline].filter((x) => x !== null && x.trim() !== '').join('\n');
   return {
     html,
     css: rawCss === null ? null : stripCssComments(rawCss),
     cssLinked: linked !== null,
-    js: js === null ? null : stripJsComments(js),
+    js: js === null && inline.trim() === '' ? null : stripJsComments(allJs),
   };
 }
 
@@ -174,21 +193,31 @@ export const STATIC_CHECKS = {
   's3-spacing': ({ css }) => hasDecl(css, /(^|[;{\s])(padding|margin)(-[a-z]+)?\s*:\s*[^;}\s]/i),
   's3-flex': ({ css }) => hasDecl(css, /display\s*:\s*(inline-)?flex\b/i),
   's3-media': ({ css }) => hasDecl(css, /@media\b[^{]*\{/i),
+  // Two ways, both taught: an inline <script> or the script.js file. Either one is safe when it is a
+  // module or the last thing before </body>; an external file may also use defer.
   's4-linked': ({ html }) => {
-    const tag = findTags(html, 'script').find((t) => localHref(t.attrs, 'script.js'));
-    if (!tag) return false;
-    // A module script is deferred by the browser, so it is safe in the head too.
-    if ('defer' in tag.attrs || (tag.attrs.type ?? '').toLowerCase() === 'module') return true;
-    // Otherwise it must be the last thing before </body>.
     const bodyEnd = html.search(/<\/body\s*>/i);
-    const rest = html.slice(tag.end, bodyEnd === -1 ? html.length : bodyEnd);
-    return rest.replace(/<\/script\s*>/gi, '').replace(/<script\b[^>]*>\s*<\/script\s*>/gi, '').trim() === '';
+    const blocks = scriptBlocks(html);
+    return blocks.some((b) => {
+      const external = 'src' in b.attrs;
+      if (external && !localHref(b.attrs, 'script.js')) return false;
+      if ((b.attrs.type ?? '').toLowerCase() === 'module') return true;
+      if (external && 'defer' in b.attrs) return true;
+      if (bodyEnd === -1 || b.index > bodyEnd) return false;
+      const rest = html.slice(b.end, bodyEnd).replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+      return rest.trim() === '';
+    });
   },
   's4-button': ({ html }) => findTags(html, 'button').length > 0,
   's4-listener': ({ js }) => js !== null && /\.addEventListener\s*\(/.test(js),
+  // Any change to the page the lessons teach: a text swap, a style change or a class toggle.
   's4-reacts': ({ js }) =>
     js !== null &&
-    (/\.(textContent|innerText|innerHTML)\s*(\+)?=(?!=)/.test(js) || /\.classList\s*\.\s*(toggle|add|remove)\s*\(/.test(js)),
+    (/\.(textContent|innerText|innerHTML)\s*(\+)?=(?!=)/.test(js) ||
+      /\.style\s*\.\s*[A-Za-z-]+\s*=(?!=)/.test(js) ||
+      /\.style\s*\.\s*setProperty\s*\(/.test(js) ||
+      /\.className\s*(\+)?=(?!=)/.test(js) ||
+      /\.classList\s*\.\s*(toggle|add|remove)\s*\(/.test(js)),
 };
 
 // ---------- step 5: network ----------
@@ -200,7 +229,10 @@ export function pagesUrl(opts) {
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY;
   if (!repo || !repo.includes('/')) return null;
   const [owner, name] = repo.split('/');
-  return `https://${owner.toLowerCase()}.github.io/${name}/`;
+  const host = `${owner.toLowerCase()}.github.io`;
+  // A repo named <owner>.github.io is the user site: it lives at the root, not under /<name>/.
+  if (name.toLowerCase() === host) return `https://${host}/`;
+  return `https://${host}/${name}/`;
 }
 
 async function fetchWithRetries(url, retries, delay) {

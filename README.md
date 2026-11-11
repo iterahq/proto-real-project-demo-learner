@@ -9,7 +9,7 @@ pelo celular. Você escreve tudo em 3 arquivos:
 
 - `index.html`: o que aparece na página (textos, links, imagens)
 - `style.css`: como a página fica bonita
-- `script.js`: o que acontece quando alguém clica
+- `script.js` (ou um script no fim do `index.html`): o que acontece quando alguém clica
 
 ## Como enviar: editar e salvar no GitHub
 
@@ -33,7 +33,7 @@ Cada vez que você salva, um robô confere o seu site.
 1. **Estrutura**: monte o esqueleto da página no `index.html`.
 2. **Conteúdo**: escreva sobre você, com uma lista, um link e uma imagem.
 3. **Estilo**: ligue o `style.css`, mude uma cor, dê espaço, ponha itens em fila e ajuste para o celular.
-4. **Interação**: faça um botão que muda algo na página quando alguém clica.
+4. **Interação**: faça um botão que muda algo na página quando alguém clica (um script no fim do `index.html` ou o `script.js` ligado no fim do body).
 5. **Publicar**: coloque o site no ar com o GitHub Pages.
 
 Dentro dos arquivos tem comentários `TODO` dizendo o que fazer em cada passo.

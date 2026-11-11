@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Duda Demo - Portfólio</title>
   <link rel="stylesheet" href="style.css">
-  <script type="module" src="script.js"></script>
 </head>
 <body>
   <header>
@@ -27,6 +26,12 @@
     </section>
   </main>
   <footer><p id="recado">Feito pela Duda Demo</p><button id="botao">Dizer oi</button></footer>
+<script>
+  const botao = document.querySelector('#botao');
+  botao.addEventListener('click', () => {
+    document.querySelector('#recado').style.color = '#3fd17f';
+  });
+</script>
 </body>
 </html>
 <!-- publish -->

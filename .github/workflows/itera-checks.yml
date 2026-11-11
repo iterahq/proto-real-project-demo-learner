@@ -100,6 +100,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
+          # Never replace a result from a NEWER run (run ids only grow): two quick pushes must not
+          # leave the older result last. The concurrency group already runs publishes one at a time.
+          prev="$RUNNER_TEMP/itera-prev"
+          rm -rf "$prev"
+          if git clone -q --depth 1 -b itera-results "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$prev" 2>/dev/null; then
+            prev_id=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runId||0)}catch{console.log(0)}" "$prev/itera-result.json")
+            if [ "${prev_id:-0}" -gt "${GITHUB_RUN_ID}" ]; then
+              echo "A result from a newer run ($prev_id) is already published; keeping it."
+              exit 0
+            fi
+          fi
           out="$RUNNER_TEMP/itera-result"
           rm -rf "$out" && mkdir "$out"
           node checks/run.mjs --all --json --retries 3 --delay 5000 > "$out/itera-result.json" || true

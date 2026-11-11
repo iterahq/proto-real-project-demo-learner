@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import { runStep, runAll, loadProject, stripJsComments, STATIC_CHECKS, describeFail, toMarkdown, buildResult } from './run.mjs';
+import { runStep, runAll, loadProject, pagesUrl, stripJsComments, STATIC_CHECKS, describeFail, toMarkdown, buildResult } from './run.mjs';
 
 const project = loadProject();
 
@@ -113,6 +113,45 @@ test('step-4 fails when script is in head without defer and js does nothing', as
 test('step-4 does not count a comparison as a text swap', async () => {
   const js = `document.querySelector('button').addEventListener('click', () => { if (a.textContent === 'x') {} });`;
   assert.deepEqual(failedIds(await run('step-4', site({ 'script.js': js }))), ['s4-reacts']);
+});
+
+const inlineSite = (script, where = 'end') => {
+  const base = html(site()).replace('<script src="script.js"></script>', where === 'end' ? script : '');
+  return site({ 'index.html': where === 'end' ? base : base.replace('</head>', `${script}</head>`), 'script.js': '' });
+};
+const INLINE_JS = `<script>document.querySelector('button').addEventListener('click', () => { document.querySelector('h1').textContent = 'Oi!'; });</script>`;
+
+test('step-4 accepts an inline script at the end of the body, which the lessons teach', async () => {
+  assert.equal((await run('step-4', inlineSite(INLINE_JS))).status, 'pass');
+});
+test('step-4 rejects an inline script in the head (it runs before the page exists)', async () => {
+  const r = await run('step-4', inlineSite(INLINE_JS, 'head'));
+  assert.deepEqual(failedIds(r), ['s4-linked']);
+});
+test('step-4 fails with an empty inline script and no script.js code', async () => {
+  const r = await run('step-4', inlineSite('<script></script>'));
+  assert.deepEqual(failedIds(r), ['s4-listener', 's4-reacts']);
+});
+test('step-4 fails when there is no script at all', async () => {
+  const r = await run('step-4', inlineSite(''));
+  assert.deepEqual(failedIds(r), ['s4-linked', 's4-listener', 's4-reacts']);
+});
+test('step-4 accepts a style change, a className change and setProperty', async () => {
+  for (const change of ["el.style.color = 'red';", "el.style.backgroundColor = 'black';", "el.className = 'dark';", "el.style.setProperty('color', 'red');"]) {
+    const js = `const el = document.querySelector('h1'); document.querySelector('button').addEventListener('click', () => { ${change} });`;
+    assert.equal((await run('step-4', site({ 'script.js': js }))).status, 'pass', change);
+  }
+});
+test('step-4 does not count a style comparison as a change', async () => {
+  const js = `document.querySelector('button').addEventListener('click', () => { if (el.style.color === 'red') {} });`;
+  assert.deepEqual(failedIds(await run('step-4', site({ 'script.js': js }))), ['s4-reacts']);
+});
+
+test('pagesUrl: normal repo, and the <owner>.github.io user site at the root', () => {
+  assert.equal(pagesUrl({ repo: 'Ana/meu-portfolio' }), 'https://ana.github.io/meu-portfolio/');
+  assert.equal(pagesUrl({ repo: 'ana/ana.github.io' }), 'https://ana.github.io/');
+  assert.equal(pagesUrl({ repo: 'Ana/ANA.github.io' }), 'https://ana.github.io/');
+  assert.equal(pagesUrl({ url: 'http://x/' }), 'http://x/');
 });
 
 test('js comment stripper keeps strings that look like comments', () => {
